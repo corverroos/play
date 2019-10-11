@@ -31,6 +31,7 @@ const (
 )
 
 func StartLoops(b Backends) {
+
 	go startMatchForever(b)
 
 	reqs := []consumeReq{
@@ -88,6 +89,11 @@ func makeSubmitNext(b Backends, index int) consumeReq {
 			return nil
 		default:
 			return errors.New("unexpected status", j.KV("status", r.Status))
+		}
+
+		if !r.State.HasAll() {
+			log.Info(ctx, "waiting for data until next submit")
+			return fate.ErrTempt
 		}
 
 		i, ps, ok := r.State.GetMine()
@@ -154,7 +160,7 @@ func makeShareRound(b Backends, index int) consumeReq {
 			// I'm still collecting, push back a bit
 			return fate.ErrTempt
 		case play.StatusCollected, play.StatusShared:
-		// Yeah, shared!
+			// Yeah, shared!
 		case play.StatusSubmitted:
 			// mmm, late, ignore.
 			return nil
@@ -221,7 +227,7 @@ func makeExitOnEnded(b Backends) consumeReq {
 		return nil
 	}
 
-	name := reflex.ConsumerName(consumerEngineLog)
+	name := reflex.ConsumerName(consumerEngineEnded)
 
 	return newConsumeReq(b.Engine().Stream, name, f)
 }
@@ -235,7 +241,7 @@ func makeEngineLogger(b Backends) consumeReq {
 		return fate.Tempt()
 	}
 
-	name := reflex.ConsumerName(consumerEngineEnded)
+	name := reflex.ConsumerName(consumerEngineLog)
 
 	return newConsumeReq(b.Engine().Stream, name, f)
 }
@@ -331,7 +337,7 @@ func makeCollectRound(b Backends) consumeReq {
 		switch r.Status {
 		case play.StatusJoined:
 			// Yeah, collect!
-		case play.StatusCollected:
+		case play.StatusCollected, play.StatusShared, play.StatusSubmitted:
 			// Reprocessing event, we are done.
 			return nil
 		case play.StatusExcluded:
