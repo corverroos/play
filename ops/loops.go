@@ -75,8 +75,11 @@ func makeSubmitNext(b Backends, index int) consumeReq {
 		}
 
 		switch r.Status {
+		case play.StatusCollected:
+			// I'm still getting shared data. Push back a bit.
+			return fate.ErrTempt
 		case play.StatusShared:
-		// Ready to submit!
+			// Ready to submit!
 		case play.StatusSubmitted:
 			// mmm, late, ignore.
 			return nil
@@ -148,7 +151,7 @@ func makeShareRound(b Backends, index int) consumeReq {
 
 		switch r.Status {
 		case play.StatusJoined:
-			// I'm still joining, push back a bit
+			// I'm still collecting, push back a bit
 			return fate.ErrTempt
 		case play.StatusCollected, play.StatusShared:
 		// Yeah, shared!
@@ -252,6 +255,9 @@ func makeSubmitFirst(b Backends) consumeReq {
 		}
 
 		switch r.Status {
+		case play.StatusJoined:
+			// I missed some update, push back a bit.
+			return fate.ErrTempt
 		case play.StatusCollected:
 			// Yeah, maybe submit!
 		case play.StatusShared:
