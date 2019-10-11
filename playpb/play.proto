@@ -1,0 +1,24 @@
+syntax = "proto3";
+package playpb;
+
+import "github.com/luno/reflex/reflexpb/reflex.proto";
+
+service Engine {
+  rpc Ping (Empty) returns (Empty) {}
+  rpc Stream (reflexpb.StreamRequest) returns (stream reflexpb.Event) {}
+  rpc GetRoundData(GetRoundDataReq) returns (RoundData) {}
+}
+
+message Empty {}
+
+message GetRoundDataReq {
+  int64 roundID = 1;
+}
+
+message RoundData {
+  int64 externalID = 1;
+  bool included = 2;
+  bool submitted = 3;
+  int64 rank = 4;
+  map<int64,int64> parts = 5;
+}
