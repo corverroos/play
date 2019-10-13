@@ -264,9 +264,7 @@ func makeSubmitFirst(b Backends) consumeReq {
 		case play.StatusJoined:
 			// I missed some update, push back a bit.
 			return fate.ErrTempt
-		case play.StatusCollected:
-			// Yeah, maybe submit!
-		case play.StatusShared:
+		case play.StatusCollected, play.StatusShared:
 			// Yeah, maybe submit!
 		case play.StatusSubmitted:
 			// Reprocessing event, we are done.
@@ -291,6 +289,7 @@ func makeSubmitFirst(b Backends) consumeReq {
 		firstRank := r.State.FirstRank()
 		if ps.Rank != firstRank {
 			// I'm not first
+			log.Info(ctx, "not submitting first, rank not first")
 			return nil
 		}
 
@@ -374,8 +373,9 @@ func makeCollectRound(b Backends) consumeReq {
 		}
 		r.State.Players[i].Rank = res.Rank
 		r.State.Players[i].Parts = parts
+		r.State.Players[i].Collected = true
 
-		err = rounds.JoinedToCollected(ctx, b.PlayDB().DB, eid, r.Version, r.State)
+		err = rounds.JoinedToCollected(ctx, b.PlayDB().DB, r.ID, r.Version, r.State)
 		if err != nil {
 			return err
 		}
