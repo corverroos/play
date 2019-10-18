@@ -192,7 +192,8 @@ func makeShareRound(b Backends, index int) consumeReq {
 			return err
 		}
 
-		log.Info(ctx, "shared player data", j.MKV{"other": index, "included": data.Included})
+		log.Info(ctx, "shared player data", j.MKV{"other": index,
+			"included": data.Included, "foreign_id": r.ExternalID})
 
 		return fate.Tempt()
 	}
@@ -222,8 +223,7 @@ func makeExitOnEnded(b Backends) consumeReq {
 		if !reflex.IsType(e.Type, engine.EventTypeMatchEnded) {
 			return nil
 		}
-		log.Info(ctx, "match ended!")
-		unsure.Fatal(errors.New("exit on end :)"))
+		unsure.Fatal(errors.New("exit on match ended"))
 		return nil
 	}
 
@@ -277,7 +277,7 @@ func makeSubmitFirst(b Backends) consumeReq {
 		}
 
 		if !r.State.HasAll() {
-			log.Info(ctx, "waiting for data until first submit")
+			log.Info(ctx, "waiting for data until first submit", j.MKV{"foreign_id": r.ExternalID})
 			return fate.ErrTempt
 		}
 
@@ -289,7 +289,7 @@ func makeSubmitFirst(b Backends) consumeReq {
 		firstRank := r.State.FirstRank()
 		if ps.Rank != firstRank {
 			// I'm not first
-			log.Info(ctx, "not submitting first, rank not first")
+			log.Info(ctx, "not submitting first, rank not first", j.MKV{"foreign_id": r.ExternalID})
 			return nil
 		}
 
@@ -353,7 +353,7 @@ func makeCollectRound(b Backends) consumeReq {
 
 		if !ps.Included {
 			// Go directly to jail; do not pass go, do not collect $200
-			return rounds.JoinedToExcluded(ctx, b.PlayDB().DB, eid, r.Version)
+			return rounds.JoinedToExcluded(ctx, b.PlayDB().DB, r.ID, r.Version)
 		}
 
 		log.Info(ctx, "collecting round", j.MKV{"foreign_id": eid})
